@@ -25,3 +25,6 @@ audit.log
 
 # Local runtime config (use config.example.yaml as template)
 config.yaml
+
+# Internal architecture docs (kept local only)
+ARCHITECTURE.md
