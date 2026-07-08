@@ -51,7 +51,7 @@ from acdp.agents.guardrail_agent import GuardrailAgent, EmbeddingBlocklist
 from acdp.agents.red_team_agent import RedTeamAgent
 from acdp.authorization import AuthorizationService, ScopeRegistry
 from acdp.exceptions import ConfigError
-from acdp.llm_gateway import OllamaGateway
+from acdp.llm_gateway import OllamaGateway, create_gateway
 from acdp.models import (
     AuditAction,
     AuditRecord,
@@ -158,7 +158,7 @@ class Platform:
         """
         # --- Layer 1: Foundation ---
         audit_log = JsonlAuditLog(config.audit_log_path)
-        llm_gateway = OllamaGateway(config)
+        llm_gateway = create_gateway(config)
 
         # --- Layer 2: RAG Core ---
         if use_qdrant:

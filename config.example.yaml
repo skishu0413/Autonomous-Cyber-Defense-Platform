@@ -9,6 +9,24 @@
 reasoning_model: llama3            # LLM used for agent reasoning
 embedding_model: nomic-embed-text  # model used to embed knowledge chunks
 
+# --- LLM Provider ---
+# Supported providers: ollama | openai | anthropic
+# Default is "ollama" (local, no API key needed).
+# Credentials for cloud providers come from environment variables ONLY:
+#   OpenAI:    export OPENAI_API_KEY=sk-...
+#   Anthropic: export ANTHROPIC_API_KEY=sk-ant-...
+#
+# OpenAI model examples:
+#   reasoning_model: gpt-4o
+#   embedding_model: text-embedding-3-small
+#
+# Anthropic model examples:
+#   reasoning_model: claude-3-5-sonnet-20241022
+#   NOTE: Anthropic has no embeddings API — keep a local Ollama for embeddings
+#         or use openai provider which supports both.
+#
+llm_provider: ollama               # ollama | openai | anthropic
+
 # --- LLM behavior ---
 llm_timeout_seconds: 30.0          # per-request reasoning timeout (Req 4.5)
 

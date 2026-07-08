@@ -280,6 +280,12 @@ class PlatformConfig(BaseModel):
     vector_store_url: str = "http://localhost:6333"
     ollama_url: str = "http://localhost:11434"
     audit_log_path: str = "./audit.log"
+    # LLM provider selection.
+    # Supported values: "ollama" | "openai" | "anthropic"
+    # Credentials come from environment variables — never from this config:
+    #   OpenAI:    OPENAI_API_KEY
+    #   Anthropic: ANTHROPIC_API_KEY
+    llm_provider: Literal["ollama", "openai", "anthropic"] = "ollama"
     # Production connectors configuration.  The type annotation uses a string
     # reference to avoid a circular import at module load time (connectors/
     # __init__.py transitively imports acdp.models).  The factory imports
