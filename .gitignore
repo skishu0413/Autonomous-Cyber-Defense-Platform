@@ -22,3 +22,6 @@ audit.log
 
 # Kiro IDE
 .kiro/
+
+# Local runtime config (use config.example.yaml as template)
+config.yaml

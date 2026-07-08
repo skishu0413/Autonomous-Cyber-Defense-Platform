@@ -526,26 +526,21 @@ def _default_config_path() -> Path:
 def main(argv: list[str] | None = None) -> int:
     """Entry point for ``python -m acdp``.
 
-    Supports two modes:
+    Boots the full platform and starts **all enabled connectors** in one
+    process, then blocks until SIGINT or SIGTERM.
 
-    1. **Platform boot** (default): ``python -m acdp [--config <path>]``
-       Loads config, wires all components with animated progress, and prints
-       a ready summary panel.
+    Subcommands (still available for targeted use):
 
-    2. **Ingestion subcommand**: ``python -m acdp ingest ...``
-       Delegates to the ingestion CLI (see ``acdp.cli.ingest``).
+    * ``python -m acdp ingest ...``   — knowledge ingestion
+    * ``python -m acdp serve ...``    — GuardrailProxy only
+    * ``python -m acdp monitor ...``  — LogStreamConnector only
+    * ``python -m acdp scan ...``     — Scheduler only
 
     Returns:
-        Exit code (0 = success, 1 = error).
+        Exit code (0 = clean shutdown, 1 = error).
     """
     import argparse
-    from acdp.cli.console import (
-        console, err_console,
-        print_banner, print_success, print_error, print_warning,
-        print_result_table, boot_progress,
-    )
-    from rich.panel import Panel
-    from rich.text import Text
+    from acdp.cli.console import print_error
 
     if argv is None:
         argv = sys.argv[1:]
@@ -581,80 +576,14 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     config_path = Path(args.config) if args.config else _default_config_path()
 
-    print_banner()
-
-    # --- Animated boot sequence ---
-    platform: "Platform | None" = None
-
-    boot_steps = [
-        ("Loading configuration",       "Config"),
-        ("Initialising audit log",       "Audit Log"),
-        ("Connecting LLM gateway",       "LLM Gateway"),
-        ("Setting up knowledge base",    "Knowledge Base"),
-        ("Loading authorization policy", "Authorization"),
-        ("Starting Guardrail agent",     "Guardrail Agent"),
-        ("Starting Blue Team agent",     "Blue Team Agent"),
-        ("Starting Red Team agent",      "Red Team Agent"),
-        ("Starting DevSecOps agent",     "DevSecOps Agent"),
-        ("Wiring orchestrator",          "Orchestrator"),
-    ]
-
+    # --- Launch GUI dashboard (boots platform internally in background thread) ---
     try:
-        with boot_progress() as progress:
-            tasks = {}
-            for label, name in boot_steps:
-                tasks[name] = progress.add_task(
-                    f"[cyan]{label}[/]…", total=None
-                )
-
-            # Run the actual boot (all steps happen inside from_config_path).
-            # We advance each step marker just before and after the call so the
-            # spinner gives visual feedback even though it's a single blocking call.
-            import time
-
-            def _tick(name: str, done_label: str) -> None:
-                progress.update(
-                    tasks[name],
-                    description=f"[green]✔[/]  {done_label}",
-                    completed=1,
-                    total=1,
-                )
-
-            # Warm up the display before the blocking call
-            for _, name in boot_steps:
-                time.sleep(0.04)
-
-            platform = Platform.from_config_path(config_path)
-
-            # Mark all steps done
-            labels = [n for _, n in boot_steps]
-            for name in labels:
-                _tick(name, name)
-                time.sleep(0.03)
-
-    except ConfigError as exc:
-        print_error(f"Configuration error: {exc}")
-        return 1
+        from acdp.cli.dashboard import launch_dashboard
+        launch_dashboard(str(config_path))
     except Exception as exc:
-        print_error(f"Startup error: {exc}")
+        print_error(f"Dashboard error: {exc}")
         return 1
 
-    # --- Ready panel ---
-    console.print()
-    console.print(
-        Panel(
-            Text.assemble(
-                ("  Platform initialised and ready\n\n", "bold green"),
-                ("  Config:  ", "dim white"), (str(config_path), "cyan"), ("\n", ""),
-                ("  Agents:  ", "dim white"),
-                ("Guardrail  Blue Team  Red Team  DevSecOps", "bold magenta"),
-            ),
-            title="[bold green]● ACDP READY[/]",
-            border_style="green",
-            padding=(1, 4),
-        )
-    )
-    console.print()
     return 0
 
 
