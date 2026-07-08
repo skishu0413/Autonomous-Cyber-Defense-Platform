@@ -653,11 +653,6 @@ class Dashboard:
                  fg=TX_MUTED, font=FONT_VER).pack(
             side="right", padx=18, pady=14)
 
-        # Config path — top right (secondary)
-        tk.Label(bar, text=f"config: {self._config_path}",
-                 bg=BG_HEADER, fg=TX_MUTED,
-                 font=FONT_VER).pack(side="right", padx=(0, 4), pady=14)
-
         # Center column for hero title
         center = tk.Frame(bar, bg=BG_HEADER)
         center.pack(expand=True)
