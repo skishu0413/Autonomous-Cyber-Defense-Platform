@@ -1,0 +1,84 @@
+# Autonomous Cyber Defense Platform - example configuration
+#
+# Copy this file to config.yaml and edit the values for your environment.
+# Any value omitted here falls back to the documented default shown below
+# (Req 13.5). Missing or invalid required values cause a startup error that
+# names the offending value (Req 13.2).
+
+# --- Models (served by Ollama) ---
+reasoning_model: llama3            # LLM used for agent reasoning
+embedding_model: nomic-embed-text  # model used to embed knowledge chunks
+
+# --- LLM behavior ---
+llm_timeout_seconds: 30.0          # per-request reasoning timeout (Req 4.5)
+
+# --- Retrieval / RAG ---
+similarity_threshold: 0.85         # guardrail similarity cutoff, < 1.0 (Req 5.2)
+top_k: 5                           # number of chunks retrieved per query (Req 3.1)
+
+# --- Detection & response ---
+severity_threshold: high           # info | low | medium | high | critical
+containment_requires_approval: true
+
+# --- Guardrail ---
+guardrail_default_action: block    # allow | block (Req 5.5)
+
+# --- Service connections ---
+vector_store_url: http://localhost:6333   # Qdrant Vector Store
+ollama_url: http://localhost:11434         # Ollama model server
+
+# --- Audit ---
+audit_log_path: ./audit.log      # append-only audit log location
+
+# --- Production Connectors ---
+# Each connector is disabled by default (enabled: false). Enable by setting
+# enabled: true and supplying the relevant settings for your environment.
+connectors:
+
+  # HTTP Proxy / Guardrail API
+  # Sits inline between users and the upstream LLM, screening every prompt
+  # through GuardrailAgent and scrubbing every response.
+  guardrail_proxy:
+    enabled: false                                  # set true to activate
+    host: "0.0.0.0"                                 # bind address (default: all interfaces)
+    port: 8080                                      # listen port (default: 8080)
+    upstream_url: "http://localhost:11434/api/generate"  # upstream LLM endpoint
+    ssl_certfile: null                              # path to TLS certificate file (optional)
+    ssl_keyfile: null                               # path to TLS private key file (optional)
+
+  # Log Stream Connector / Blue Team
+  # Ingests live log data and feeds each line to BlueTeamAgent for anomaly
+  # detection. HIGH/CRITICAL findings trigger auto-containment requests.
+  log_stream:
+    enabled: false                  # set true to activate
+    mode: tail                      # tail | syslog_udp | poll_dir
+    log_path: /var/log/syslog       # log file path (for tail and poll_dir modes)
+    udp_host: "0.0.0.0"            # bind address for syslog_udp mode (default: all)
+    udp_port: 514                   # UDP port for syslog_udp mode (default: 514)
+    poll_interval_seconds: 5.0      # polling interval in seconds for poll_dir mode
+    retry_interval_seconds: 2.0     # seconds to wait before retrying after an error
+    max_retries: 5                  # maximum retry attempts before halting
+    scope_id: "default"             # TargetScope ID for containment requests
+
+  # Scheduler / Red Team
+  # Runs authorized probe campaigns on a cron or interval schedule.
+  # Optionally hands findings to DevSecOpsAgent for auto-remediation.
+  scheduler:
+    enabled: false                  # set true to activate
+    mode: interval                  # interval | cron
+    interval_seconds: 3600.0        # seconds between runs (for interval mode)
+    cron_expression: null           # five-field cron expression (for cron mode)
+                                    # e.g. "0 2 * * 1" = every Monday at 02:00 UTC
+    targets: []                     # list of asset targets to probe each run
+    #  - "api.example.com"
+    #  - "192.168.1.0/24"
+    auto_remediate: false           # pass findings to DevSecOpsAgent if true
+    scope_id: "default"             # TargetScope ID for authorization and probes
+
+  # GitHub PR Client / DevSecOps
+  # Provides a real PullRequestClient implementation using the GitHub REST API.
+  # GIT_TOKEN must be set as an environment variable — never in this file.
+  github_pr_client:
+    enabled: false                              # set true to activate
+    github_api_base_url: "https://api.github.com"  # GitHub API base (override for GHE)
+    max_retries: 3                              # max 5xx retry attempts with back-off

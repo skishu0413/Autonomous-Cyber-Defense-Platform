@@ -1,0 +1,31 @@
+# Autonomous Cyber Defense Platform - example configuration
+#
+# Copy this file to config.yaml and edit the values for your environment.
+# Any value omitted here falls back to the documented default shown below
+# (Req 13.5). Missing or invalid required values cause a startup error that
+# names the offending value (Req 13.2).
+
+# --- Models (served by Ollama) ---
+reasoning_model: llama3            # LLM used for agent reasoning
+embedding_model: nomic-embed-text  # model used to embed knowledge chunks
+
+# --- LLM behavior ---
+llm_timeout_seconds: 30.0          # per-request reasoning timeout (Req 4.5)
+
+# --- Retrieval / RAG ---
+similarity_threshold: 0.85         # guardrail similarity cutoff, < 1.0 (Req 5.2)
+top_k: 5                           # number of chunks retrieved per query (Req 3.1)
+
+# --- Detection & response ---
+severity_threshold: high           # info | low | medium | high | critical
+containment_requires_approval: true
+
+# --- Guardrail ---
+guardrail_default_action: block    # allow | block (Req 5.5)
+
+# --- Service connections ---
+vector_store_url: http://localhost:6333   # Qdrant Vector Store
+ollama_url: http://localhost:11434         # Ollama model server
+
+# --- Audit ---
+audit_log_path: ./audit.log      # append-only audit log location
